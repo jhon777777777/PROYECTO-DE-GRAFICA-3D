@@ -1,0 +1,9 @@
+{
+  "name": "raillab-3d-mini-motor",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/test_logic.mjs && node tests/test_renderer_mock.mjs && node tests/test_panel.mjs"
+  }
+}

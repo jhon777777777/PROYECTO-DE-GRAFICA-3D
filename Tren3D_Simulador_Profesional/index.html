@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b1522" />
+  <meta name="description" content="Simulación de tren 3D en WebGL2 con iluminación solar y sombras dinámicas. Ingeniería de Sistemas." />
+  <title>RailLab 3D | Simulador de Computación Gráfica</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar" aria-label="Panel de control del simulador">
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">R<span>3</span></div>
+      <div><div class="brand-title">RailLab <strong>3D</strong></div><div class="brand-sub">SIMULADOR DE FERROCARRILES</div></div>
+      <span class="brand-tag">v2.1</span>
+    </div>
+    <div class="school-card"><span class="school-symbol">◈</span><div><strong>Ingeniería de Sistemas</strong><small>Computación Gráfica · Proyecto académico</small></div></div>
+    <div class="sidebar-scroll">
+      <div class="section-head"><span class="section-number">01</span> OPERACIÓN DEL TREN <span class="section-line"></span></div>
+      <div class="control-card">
+        <div class="control-row"><label for="trainSpeed">Velocidad angular</label><output id="trainSpeedValue">0.45 rad/s</output></div>
+        <input id="trainSpeed" type="range" min="0" max="1.8" step="0.05" value="0.45" />
+        <div class="range-ends"><span>Detenido</span><span>Máxima</span></div>
+        <div class="control-row space-top"><label for="trainSize">Tamaño del tren</label><output id="trainSizeValue">100%</output></div>
+        <input id="trainSize" type="range" min="0.7" max="1.3" step="0.05" value="1" />
+        <div class="control-row space-top"><label for="wagons">Número de vagones</label><output id="wagonsValue">2</output></div>
+        <input id="wagons" type="range" min="0" max="4" step="1" value="2" />
+        <div class="action-pair"><button id="playPause" class="btn btn-primary" type="button">Ⅱ Pausar tren</button><button id="resetTrain" class="btn btn-muted" type="button">↻ Reiniciar</button></div>
+      </div>
+      <div class="section-head"><span class="section-number">02</span> RELOJ Y CICLO SOLAR <span class="section-line"></span></div>
+      <div class="control-card">
+        <div class="time-display"><div><span class="eyebrow">HORA SIMULADA</span><strong id="timeDisplay">12:00</strong></div><div class="time-icon" id="timeIcon">☀</div></div>
+        <div class="control-row"><label for="timeSlider">Hora del día</label><output id="periodDisplay">Día</output></div>
+        <input id="timeSlider" type="range" min="0" max="23.75" step="0.25" value="12" />
+        <div class="range-ends"><span>00:00</span><span>12:00</span><span>23:45</span></div>
+        <div class="presets"><button type="button" data-hour="7">07:00 <span>Amanecer</span></button><button type="button" data-hour="12">12:00 <span>Mediodía</span></button><button type="button" data-hour="17">17:00 <span>Atardecer</span></button><button type="button" data-hour="22">22:00 <span>Noche</span></button></div>
+        <label class="toggle-row"><span><strong>Avance automático</strong><small>El reloj avanza durante la simulación</small></span><input type="checkbox" id="autoTime" /><span class="switch"></span></label>
+        <div class="control-row"><label for="timeRate">Minutos por segundo</label><output id="timeRateValue">5 min/s</output></div>
+        <input id="timeRate" type="range" min="1" max="60" step="1" value="5" />
+      </div>
+      <div class="section-head"><span class="section-number">03</span> LUCES Y SOMBRAS <span class="section-line"></span></div>
+      <div class="control-card">
+        <div class="control-row"><label for="sunIntensity">Intensidad del sol</label><output id="sunIntensityValue">100%</output></div>
+        <input id="sunIntensity" type="range" min="0" max="2" step="0.05" value="1" />
+        <div class="control-row space-top"><label for="ambientIntensity">Luz ambiental</label><output id="ambientIntensityValue">42%</output></div>
+        <input id="ambientIntensity" type="range" min="0.1" max="1" step="0.02" value="0.42" />
+        <div class="control-row space-top"><label for="shadowStrength">Oscuridad de sombras</label><output id="shadowStrengthValue">78%</output></div>
+        <input id="shadowStrength" type="range" min="0" max="1" step="0.02" value="0.78" />
+        <label class="toggle-row"><span><strong>Sombras proyectadas</strong><small>Mapa de sombras WebGL2 en tiempo real</small></span><input type="checkbox" id="shadowsToggle" checked /><span class="switch"></span></label>
+        <label class="toggle-row"><span><strong>Brillo adaptado a la hora</strong><small>Focos más potentes cuando oscurece</small></span><input type="checkbox" id="autoLamps" checked /><span class="switch"></span></label>
+        <label class="toggle-row"><span><strong>Faro del tren</strong><small>Encender y apagar el foco frontal móvil</small></span><input id="headlightToggle" type="checkbox" checked /><span class="switch"></span></label>
+        <label class="toggle-row"><span><strong>Ocho postes de la vía</strong><small>Interruptor principal para todos los postes</small></span><input id="postLightToggle" type="checkbox" checked /><span class="switch"></span></label>
+        <div class="lamp-group-header"><strong>Control individual</strong><output id="postLightsCount">8 de 8 encendidos</output></div>
+        <div class="pole-switch-grid" id="postLightsGrid" role="group" aria-label="Activación individual de postes">
+          <label class="pole-switch"><input type="checkbox" data-pole="0" checked /><span class="pole-led"></span> Poste 01</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="1" checked /><span class="pole-led"></span> Poste 02</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="2" checked /><span class="pole-led"></span> Poste 03</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="3" checked /><span class="pole-led"></span> Poste 04</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="4" checked /><span class="pole-led"></span> Poste 05</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="5" checked /><span class="pole-led"></span> Poste 06</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="6" checked /><span class="pole-led"></span> Poste 07</label>
+          <label class="pole-switch"><input type="checkbox" data-pole="7" checked /><span class="pole-led"></span> Poste 08</label>
+        </div>
+        <p class="hint">Los postes están distribuidos en dos lados de la vía (4 por lado). El faro y cada poste se pueden apagar independientemente.</p>
+      </div>
+      <div class="section-head"><span class="section-number">04</span> ESCENARIO 3D <span class="section-line"></span></div>
+      <div class="control-card">
+        <div class="control-row"><label for="trees">Cantidad de árboles</label><output id="treesValue">9</output></div><input id="trees" type="range" min="0" max="28" step="1" value="9" />
+        <div class="control-row space-top"><label for="buildings">Edificaciones</label><output id="buildingsValue">3</output></div><input id="buildings" type="range" min="0" max="6" step="1" value="3" />
+        <label class="toggle-row"><span><strong>Personaje corredor</strong><small>Animación jerárquica de brazos y piernas</small></span><input id="runnerVisible" type="checkbox" checked /><span class="switch"></span></label>
+        <div class="control-row"><label for="runnerSpeed">Velocidad del corredor</label><output id="runnerSpeedValue">1.0×</output></div><input id="runnerSpeed" type="range" min="0" max="2.5" step="0.1" value="1" />
+        <div class="control-row space-top"><label for="runnerSize">Tamaño del personaje</label><output id="runnerSizeValue">100%</output></div><input id="runnerSize" type="range" min="0.5" max="1.8" step="0.1" value="1" />
+        <div class="control-row space-top"><label for="hairSize">Tamaño del cabello</label><output id="hairSizeValue">70%</output></div><input id="hairSize" type="range" min="0" max="2" step="0.05" value="0.7" />
+      </div>
+      <div class="section-head"><span class="section-number">05</span> CÁMARA <span class="section-line"></span></div>
+      <div class="control-card"><div class="camera-actions"><button type="button" data-view="isometric">◈ Isométrica</button><button type="button" data-view="top">▧ Superior</button><button type="button" data-view="front">⇥ Frontal</button><button type="button" data-view="side">⇆ Lateral</button></div><p class="hint">Arrastra sobre la escena para girar. Usa la rueda del mouse para el zoom.</p></div>
+      <div class="section-head"><span class="section-number">06</span> ESTADO DEL PROYECTO <span class="section-line"></span></div>
+      <div class="control-card checklist">
+        <p>Componentes integrados en el código fuente:</p>
+        <span>✓ Arquitectura POO · Paso 16</span><span>✓ Tren y vagones animados</span><span>✓ Ciclo solar controlable</span><span>✓ Sombras con depth map</span><span>✓ Panel de control en tiempo real</span><span>✓ Cámara orbital y personajes</span><span>✓ Ocho postes con control individual y faro independiente</span>
+        <p class="hint">Ver <strong>README.md</strong> y <strong>docs/GUIA_DEL_PROYECTO.md</strong> para localizar cada clase y sus atributos.</p>
+      </div>
+    </div>
+    <div class="sidebar-footer"><span class="status-dot"></span> Módulos ES6 · WebGL2 · GLSL 3.00</div>
+  </aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-title"><span class="breadcrumb">LABORATORIO <span>›</span> SIMULACIÓN 3D</span><h1>Tren ferroviario <em>interactivo</em></h1></div>
+      <div class="top-actions"><span class="chip" id="topPeriod">☀ Iluminación diurna</span><span class="chip chip-live"><span class="pulse-dot"></span> EN VIVO</span></div>
+    </header>
+    <div class="viewport-panel">
+      <canvas id="glCanvas" aria-label="Escenario tridimensional del tren, con luz solar y sombras ajustables"></canvas>
+      <div class="viewport-top"><div class="scene-label"><span class="mini-cross">✦</span> ESCENA / VISTA PERSPECTIVA</div><div class="scene-lights"><span id="shadowStatus">☀ Sombras activadas</span><span id="lampStatus">💡 8/8 postes</span></div></div>
+      <div class="viewport-bottom"><div class="scene-hint">↔ Arrastra para orbitar <span>·</span> ⤢ Rueda para zoom</div><div class="fps-chip" id="fpsDisplay">— FPS</div></div>
+      <div id="errorBox" role="alert" hidden></div>
+    </div>
+    <section class="dashboard-grid" aria-label="Indicadores del simulador">
+      <article class="stat-card"><div class="stat-icon">◴</div><div><span class="stat-label">HORA DEL SIMULADOR</span><strong id="statTime">12:00</strong><small id="statPeriod">Día · Sol alto</small></div></article>
+      <article class="stat-card"><div class="stat-icon">↗</div><div><span class="stat-label">VELOCIDAD</span><strong id="statSpeed">0.45 <span>rad/s</span></strong><small id="statMotion">Tren en marcha</small></div></article>
+      <article class="stat-card"><div class="stat-icon">◇</div><div><span class="stat-label">OBJETOS 3D</span><strong id="statObjects">—</strong><small>Meshes dibujados</small></div></article>
+      <article class="stat-card"><div class="stat-icon">◎</div><div><span class="stat-label">VUELTAS COMPLETADAS</span><strong id="statLaps">0</strong><small>Trayectoria elíptica</small></div></article>
+    </section>
+    <section class="progress-panel"><div class="progress-top"><div><strong>Avance de la locomotora</strong><span>Posición actual dentro de la vuelta</span></div><span id="lapPercentage">0%</span></div><div class="progress-track"><div class="progress-fill" id="lapProgress"></div></div></section>
+    <footer class="main-footer"><span>Proyecto educativo · Mini motor gráfico desarrollado con WebGL2, sin Three.js</span><span>Movimiento · Iluminación · Sombras · Programación orientada a objetos</span></footer>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
